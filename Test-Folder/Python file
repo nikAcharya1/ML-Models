@@ -1,0 +1,113 @@
+# Importing all necessary libraries
+import h5py
+from keras.preprocessing.image import ImageDataGenerator
+from keras.models import Sequential
+from keras.layers import Conv2D, MaxPooling2D
+from keras.layers import Activation, Dropout, Flatten, Dense
+from keras import backend as K
+
+img_width, img_height = 224, 224
+train_data_dir = 'v_data/train'
+validation_data_dir = 'v_data/test'
+nb_train_samples =400
+nb_validation_samples = 100
+epochs = 10
+batch_size = 16
+if K.image_data_format() == 'channels_first':
+	input_shape = (3, img_width, img_height)
+else:
+	input_shape = (img_width, img_height, 3)
+model = Sequential()
+model.add(Conv2D(32, (2, 2), input_shape=input_shape))
+model.add(Activation('relu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+
+model.add(Conv2D(32, (2, 2)))
+model.add(Activation('relu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+
+model.add(Conv2D(64, (2, 2)))
+model.add(Activation('relu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+
+model.add(Flatten())
+model.add(Dense(64))
+model.add(Activation('relu'))
+model.add(Dropout(0.5))
+model.add(Dense(1))
+model.add(Activation('sigmoid'))
+model.compile(loss='binary_crossentropy',
+			optimizer='rmsprop',
+			metrics=['accuracy'])
+train_datagen = ImageDataGenerator(
+	rescale=1. / 255,
+	shear_range=0.2,
+	zoom_range=0.2,
+	horizontal_flip=True)
+
+test_datagen = ImageDataGenerator(rescale=1. / 255)
+
+train_generator = train_datagen.flow_from_directory(
+	train_data_dir,
+	target_size=(img_width, img_height),
+	batch_size=batch_size,
+	class_mode='binary')
+
+validation_generator = test_datagen.flow_from_directory(
+	validation_data_dir,
+	target_size=(img_width, img_height),
+	batch_size=batch_size,
+	class_mode='binary')
+
+model.fit_generator(
+    train_generator,
+	steps_per_epoch=nb_train_samples // batch_size,
+	epochs=epochs,
+	validation_data=validation_generator,
+	validation_steps=nb_validation_samples // batch_size)
+Found 400 images belonging to 2 classes.
+Found 100 images belonging to 2 classes.
+C:\Users\tabal\AppData\Local\Temp\ipykernel_17044\64122331.py:21: UserWarning: `Model.fit_generator` is deprecated and will be removed in a future version. Please use `Model.fit`, which supports generators.
+  model.fit_generator(
+Epoch 1/10
+25/25 [==============================] - 12s 467ms/step - loss: 0.8084 - accuracy: 0.5475 - val_loss: 0.5638 - val_accuracy: 0.7396
+Epoch 2/10
+25/25 [==============================] - 12s 462ms/step - loss: 0.5805 - accuracy: 0.7100 - val_loss: 0.3903 - val_accuracy: 0.8542
+Epoch 3/10
+25/25 [==============================] - 11s 452ms/step - loss: 0.4865 - accuracy: 0.7750 - val_loss: 0.3411 - val_accuracy: 0.8750
+Epoch 4/10
+25/25 [==============================] - 12s 461ms/step - loss: 0.4322 - accuracy: 0.8125 - val_loss: 0.3161 - val_accuracy: 0.8854
+Epoch 5/10
+25/25 [==============================] - 11s 449ms/step - loss: 0.3929 - accuracy: 0.8275 - val_loss: 0.3190 - val_accuracy: 0.8750
+Epoch 6/10
+25/25 [==============================] - 11s 445ms/step - loss: 0.3499 - accuracy: 0.8750 - val_loss: 0.2819 - val_accuracy: 0.8854
+Epoch 7/10
+25/25 [==============================] - 12s 490ms/step - loss: 0.3569 - accuracy: 0.8575 - val_loss: 0.2737 - val_accuracy: 0.8854
+Epoch 8/10
+25/25 [==============================] - 12s 461ms/step - loss: 0.3222 - accuracy: 0.8750 - val_loss: 0.2872 - val_accuracy: 0.8854
+Epoch 9/10
+25/25 [==============================] - 11s 451ms/step - loss: 0.3176 - accuracy: 0.8500 - val_loss: 0.3042 - val_accuracy: 0.8750
+Epoch 10/10
+25/25 [==============================] - 12s 471ms/step - loss: 0.2749 - accuracy: 0.8875 - val_loss: 0.2583 - val_accuracy: 0.8958
+<keras.callbacks.History at 0x17bfab52170>
+model.save('model_saved.h5') 
+from keras.models import load_model
+from tensorflow.keras.utils import load_img
+from tensorflow.keras.utils import img_to_array
+from keras.applications.vgg16 import preprocess_input
+from keras.applications.vgg16 import decode_predictions
+from keras.applications.vgg16 import VGG16
+import numpy as np
+
+model = load_model('model_saved.h5')
+
+
+image = load_img('v_data/csketch.jpg', target_size=(224, 224))
+img = np.array(image)
+img = img / 255.0
+img = img.reshape(1,224,224,3)
+label = model.predict(img)
+print("Predicted Class (0 - Cars , 1- Planes): ", round(label[0][0], 2))
+1/1 [==============================] - 0s 80ms/step
+Predicted Class (0 - Cars , 1- Planes):  0.02
+ 
